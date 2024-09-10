@@ -164,8 +164,25 @@ if (isset($_GET['hal'])) {
             $vtanggal_diterima = $data["tanggal_diterima"];
         }
         $tampil->close();
-    } else if ($_GET['hal'] == 'hapus') {
+    }else if (isset($_GET['hal']) && $_GET['hal'] == 'hapus') {
         $id = intval($_GET['id']);
+        
+        // Ambil nama gambar dari database
+        $ambilGambar = $koneksi->prepare("SELECT gambar FROM tb_barang WHERE id = ?");
+        $ambilGambar->bind_param("i", $id);
+        $ambilGambar->execute();
+        $data = $ambilGambar->get_result()->fetch_assoc();
+        
+        if ($data) {
+            $gambar = $data['gambar'];
+            // Hapus gambar dari direktori upload
+            if ($gambar && file_exists('./uploads/' . $gambar)) {
+                unlink('./uploads/' . $gambar);
+            }
+        }
+        $ambilGambar->close();
+    
+        // Hapus entri barang dari database
         $hapus = $koneksi->prepare("DELETE FROM tb_barang WHERE id = ?");
         $hapus->bind_param("i", $id);
         if ($hapus->execute()) {
@@ -181,6 +198,7 @@ if (isset($_GET['hal'])) {
         }
         $hapus->close();
     }
+    
 }
 ?>
 
