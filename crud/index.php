@@ -316,7 +316,7 @@ if (isset($_GET['hal'])) {
                     $no = 1;
                     if (isset($_POST['bcari'])) {
                         $keyword = $_POST['cari'];
-                        $isitabel = "SELECT * FROM tb_barang WHERE kode LIKE '%$keyword%' OR nama LIKE '%$keyword%' ORDER BY id DESC";
+                        $isitabel = "SELECT * FROM tb_barang WHERE kode LIKE '%$keyword%' OR nama LIKE '%$keyword%' OR asal LIKE '%$keyword%' ORDER BY id DESC";
                     } else {
                         $isitabel = "SELECT * FROM tb_barang ORDER BY id DESC";
                     }
