@@ -1,17 +1,17 @@
 <?php
-// Koneksi
+// Koneksi ke database
 $server = "localhost";
 $username = "root";
 $password = "";
 $database = "db_crud";
 
-// Buat Koneksi
+// Buat koneksi
 $koneksi = mysqli_connect($server, $username, $password, $database);
 if (!$koneksi) {
     die("Koneksi gagal: " . mysqli_connect_error());
 }
 
-// Kode Otomatis
+// Kode barang otomatis
 $isitabel = mysqli_query($koneksi, "SELECT kode FROM tb_barang ORDER BY kode DESC LIMIT 1");
 $dataterbaru = mysqli_fetch_array($isitabel);
 
@@ -38,7 +38,11 @@ if (isset($_POST['logout'])) {
     header('Location: login.php');
     exit();
 }
-// Validasi dan proses input
+
+// Variabel penampung gambar lama
+$existingImage = '';
+
+// Validasi dan proses input data
 if (isset($_POST["submit"])) {
     $kode = trim($_POST['kodebarang']);
     $nama = trim($_POST['namabarang']);
@@ -46,7 +50,7 @@ if (isset($_POST["submit"])) {
     $jumlah = trim($_POST['jumlahbarang']);
     $satuan = trim($_POST['unit']);
     $tanggal_diterima = trim($_POST['tanggalditerima']);
-    $gambar = '';
+    $gambar = ''; // Placeholder untuk gambar
 
     // Validasi input
     if (empty($kode) || empty($nama) || empty($asal) || empty($jumlah) || empty($satuan) || empty($tanggal_diterima)) {
@@ -56,6 +60,7 @@ if (isset($_POST["submit"])) {
             </script>";
         exit();
     }
+
     // Validasi jumlah tidak negatif
     if ($jumlah < 0) {
         echo "<script>
@@ -63,6 +68,20 @@ if (isset($_POST["submit"])) {
                 document.location='index.php';
             </script>";
         exit();
+    }
+
+    // Cek jika sedang mengedit data
+    if (isset($_GET['hal']) && $_GET['hal'] == "edit") {
+        $id = intval($_GET['id']);
+        $ambilGambar = $koneksi->prepare("SELECT gambar FROM tb_barang WHERE id = ?");
+        $ambilGambar->bind_param("i", $id);
+        $ambilGambar->execute();
+        $data = $ambilGambar->get_result()->fetch_assoc();
+
+        if ($data) {
+            $existingImage = $data['gambar'];
+        }
+        $ambilGambar->close();
     }
 
     // Proses upload gambar
@@ -74,35 +93,23 @@ if (isset($_POST["submit"])) {
         $fileNameCmps = explode(".", $fileName);
         $fileExtension = strtolower(end($fileNameCmps));
         $allowedExts = array('jpg', 'jpeg', 'png');
+        $uploadFileDir = './uploads/';
 
         // Cek ekstensi file
         if (in_array($fileExtension, $allowedExts)) {
             // Cek ukuran file (maks 5MB)
             if ($fileSize < 5000000) {
-                $uploadFileDir = './uploads/';
                 if (!is_dir($uploadFileDir)) {
                     mkdir($uploadFileDir, 0777, true);
                 }
                 $dest_file_path = $uploadFileDir . $fileName;
 
-                // Handle existing image deletion
-                if (isset($_GET['hal']) && $_GET['hal'] == "edit") {
-                    $id = intval($_GET['id']);
-                    $ambilGambar = $koneksi->prepare("SELECT gambar FROM tb_barang WHERE id = ?");
-                    $ambilGambar->bind_param("i", $id);
-                    $ambilGambar->execute();
-                    $data = $ambilGambar->get_result()->fetch_assoc();
-                    
-                    if ($data) {
-                        $existingImage = $data['gambar'];
-                        // Hapus gambar dari direktori upload
-                        if ($existingImage && file_exists('./uploads/' . $existingImage)) {
-                            unlink('./uploads/' . $existingImage);
-                        }
-                    }
-                    $ambilGambar->close();
+                // Hapus gambar lama jika ada gambar baru diunggah
+                if ($existingImage && file_exists($uploadFileDir . $existingImage)) {
+                    unlink($uploadFileDir . $existingImage);
                 }
 
+                // Pindahkan file baru
                 if (move_uploaded_file($fileTmpPath, $dest_file_path)) {
                     $gambar = $fileName;
                 } else {
@@ -127,16 +134,11 @@ if (isset($_POST["submit"])) {
             exit();
         }
     } else {
-        // Handle error case
-        if ($_FILES['gambarbarang']['error'] !== UPLOAD_ERR_NO_FILE) {
-            echo "<script>
-                alert('Terjadi kesalahan saat meng-upload file.');
-                document.location='index.php';
-            </script>";
-            exit();
-        }
+        // Jika tidak ada gambar baru, gunakan gambar lama
+        $gambar = $existingImage;
     }
 
+    // Proses simpan atau edit data
     if (isset($_GET['hal']) && $_GET['hal'] == "edit") {
         $sql = "UPDATE tb_barang SET kode = ?, nama = ?, gambar = ?, asal = ?, jumlah = ?, satuan = ?, tanggal_diterima = ? WHERE id = ?";
         $stmt = $koneksi->prepare($sql);
@@ -162,9 +164,7 @@ if (isset($_POST["submit"])) {
     $stmt->close();
 }
 
-
-
-// Deklarasi Variabel Penampung Data yang Akan Diedit
+// Deklarasi variabel penampung data yang akan diedit
 $vkode = $kodebaru;
 $vnama = "";
 $vgambar = "";
@@ -173,7 +173,7 @@ $vjumlah = "";
 $vsatuan = "";
 $vtanggal_diterima = "";
 
-// Pengujian Tombol Edit / Hapus Ketika DiKlik
+// Pengujian tombol edit / hapus ketika diklik
 if (isset($_GET['hal'])) {
     if ($_GET['hal'] == 'edit') {
         $id = intval($_GET['id']);
@@ -191,7 +191,7 @@ if (isset($_GET['hal'])) {
             $vtanggal_diterima = $data["tanggal_diterima"];
         }
         $tampil->close();
-    }else if (isset($_GET['hal']) && $_GET['hal'] == 'hapus') {
+    } else if ($_GET['hal'] == 'hapus') {
         $id = intval($_GET['id']);
         
         // Ambil nama gambar dari database
@@ -201,33 +201,28 @@ if (isset($_GET['hal'])) {
         $data = $ambilGambar->get_result()->fetch_assoc();
         
         if ($data) {
-            $gambar = $data['gambar'];
+            $existingImage = $data['gambar'];
             // Hapus gambar dari direktori upload
-            if ($gambar && file_exists('./uploads/' . $gambar)) {
-                unlink('./uploads/' . $gambar);
+            if ($existingImage && file_exists('./uploads/' . $existingImage)) {
+                unlink('./uploads/' . $existingImage);
             }
         }
         $ambilGambar->close();
-    
-        // Hapus entri barang dari database
+
+        // Hapus data barang
         $hapus = $koneksi->prepare("DELETE FROM tb_barang WHERE id = ?");
         $hapus->bind_param("i", $id);
-        if ($hapus->execute()) {
-            echo "<script>
-                    alert('Berhasil Hapus Data!');
-                    document.location='index.php';
-                </script>";
-        } else {
-            echo "<script>
-                    alert('Gagal Hapus Data!');
-                    document.location='index.php';
-                </script>";
-        }
+        $hapus->execute();
         $hapus->close();
+
+        echo "<script>
+                alert('Berhasil Hapus Data!');
+                document.location='index.php';
+            </script>";
     }
-    
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -295,7 +290,7 @@ if (isset($_GET['hal'])) {
                 </div>
                 <div class="mb-3">
                     <label for="gambar-barang" class="form-label">Gambar Barang</label>
-                    <input type="file" class="form-control" name="gambarbarang" accept=".jpg,.png,.jpeg" id="gambar-barang" required />
+                    <input type="file" class="form-control" name="gambarbarang" accept=".jpg,.png,.jpeg" id="gambar-barang" <?= (isset($_GET['hal']) && $_GET['hal'] == "edit") ? '' : 'required' ?> />
                 </div>
                 <div class="mb-3">
                     <label for="asal-barang" class="form-label">Asal Barang</label>
@@ -311,7 +306,7 @@ if (isset($_GET['hal'])) {
                 <div class="row">
                     <div class="col-md-6">
                         <label for="jumlah-barang" class="form-label">Jumlah Barang</label>
-                        <input type="number" class="form-control" name="jumlahbarang" value="<?= $vjumlah ?>" id="jumlah-barang" placeholder="Jumlah Barang" required min="0"{/>
+                        <input type="number" class="form-control" name="jumlahbarang" value="<?= $vjumlah ?>" id="jumlah-barang" placeholder="Jumlah Barang" required min="0"/>
                     </div>
                     <div class="col-md-6">
                         <label for="unit-barang" class="form-label">Unit Barang</label>
