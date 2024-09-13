@@ -56,6 +56,7 @@ if (isset($_POST["submit"])) {
             </script>";
         exit();
     }
+
     // Proses upload gambar
     if (isset($_FILES['gambarbarang']) && $_FILES['gambarbarang']['error'] === UPLOAD_ERR_OK) {
         $fileTmpPath = $_FILES['gambarbarang']['tmp_name'];
@@ -75,6 +76,24 @@ if (isset($_POST["submit"])) {
                     mkdir($uploadFileDir, 0777, true);
                 }
                 $dest_file_path = $uploadFileDir . $fileName;
+
+                // Handle existing image deletion
+                if (isset($_GET['hal']) && $_GET['hal'] == "edit") {
+                    $id = intval($_GET['id']);
+                    $ambilGambar = $koneksi->prepare("SELECT gambar FROM tb_barang WHERE id = ?");
+                    $ambilGambar->bind_param("i", $id);
+                    $ambilGambar->execute();
+                    $data = $ambilGambar->get_result()->fetch_assoc();
+                    
+                    if ($data) {
+                        $existingImage = $data['gambar'];
+                        // Hapus gambar dari direktori upload
+                        if ($existingImage && file_exists('./uploads/' . $existingImage)) {
+                            unlink('./uploads/' . $existingImage);
+                        }
+                    }
+                    $ambilGambar->close();
+                }
 
                 if (move_uploaded_file($fileTmpPath, $dest_file_path)) {
                     $gambar = $fileName;
@@ -110,7 +129,6 @@ if (isset($_POST["submit"])) {
         }
     }
 
-
     if (isset($_GET['hal']) && $_GET['hal'] == "edit") {
         $sql = "UPDATE tb_barang SET kode = ?, nama = ?, gambar = ?, asal = ?, jumlah = ?, satuan = ?, tanggal_diterima = ? WHERE id = ?";
         $stmt = $koneksi->prepare($sql);
@@ -135,6 +153,7 @@ if (isset($_POST["submit"])) {
     }
     $stmt->close();
 }
+
 
 
 // Deklarasi Variabel Penampung Data yang Akan Diedit
