@@ -56,6 +56,14 @@ if (isset($_POST["submit"])) {
             </script>";
         exit();
     }
+    // Validasi jumlah tidak negatif
+    if ($jumlah < 0) {
+        echo "<script>
+                alert('Jumlah barang tidak boleh negatif.');
+                document.location='index.php';
+            </script>";
+        exit();
+    }
 
     // Proses upload gambar
     if (isset($_FILES['gambarbarang']) && $_FILES['gambarbarang']['error'] === UPLOAD_ERR_OK) {
