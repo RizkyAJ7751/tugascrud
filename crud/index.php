@@ -229,6 +229,7 @@ if (isset($_GET['hal'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Data Inventaris</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" href="favicon-32x32.png" type="image/x-icon">
     <style>
         .card-header {
             background: linear-gradient(135deg, #5a9, #58d);
@@ -370,8 +371,8 @@ if (isset($_GET['hal'])) {
                             <td><?= $data['jumlah'] . ' ' . $data['satuan'] ?></td>
                             <td><?= $data['tanggal_diterima'] ?></td>
                             <td>
-                                <a href="index.php?hal=edit&id=<?= $data['id'] ?>" class="btn btn-primary btn-sm text-light">Edit</a>
-                                <a href="index.php?hal=hapus&id=<?= $data['id'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('Apakah anda ingin menghapus?')">Hapus</a>
+                                <a href="index.php?hal=edit&id=<?= $data['id'] ?>" class="btn btn-primary btn-sm text-light" onclick="return confirm('Apakah anda yakin ingin mengedit?')">Edit</a>
+                                <a href="index.php?hal=hapus&id=<?= $data['id'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('Apakah anda yakin ingin menghapus?')">Hapus</a>
                             </td>
                         </tr>
                     <?php endwhile; ?>
