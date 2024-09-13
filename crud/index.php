@@ -303,7 +303,7 @@ if (isset($_GET['hal'])) {
                 <div class="row">
                     <div class="col-md-6">
                         <label for="jumlah-barang" class="form-label">Jumlah Barang</label>
-                        <input type="number" class="form-control" name="jumlahbarang" value="<?= $vjumlah ?>" id="jumlah-barang" placeholder="Jumlah Barang" required />
+                        <input type="number" class="form-control" name="jumlahbarang" value="<?= $vjumlah ?>" id="jumlah-barang" placeholder="Jumlah Barang" required min="0"{/>
                     </div>
                     <div class="col-md-6">
                         <label for="unit-barang" class="form-label">Unit Barang</label>
